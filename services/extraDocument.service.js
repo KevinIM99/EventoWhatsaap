@@ -29,6 +29,12 @@ async function fetchExtraDocumentByCedula(cedula, options = {}) {
   }
 
   const token = await generateToken()
+  console.log("TOKEN generado para extraDocument:", token ? token.substring(0, 20) + "..." : "VACÍO")
+  console.log("URL del request:", url)
+  console.log("Headers que se envían:", {
+    ...form.getHeaders(),
+  "Authorization": `Bearer ${token?.substring(0, 20)}...`
+  })
 
   const form = new FormData()
   form.append("id", cedula)
