@@ -97,7 +97,7 @@ router.post("/onboarding-request/:sessionId", async (req, res) => {
     }
 
     // Obtener extraDocument si no está disponible
-    const contractPath = path.join(__dirname, "../assets/contrato.b64")
+    const contractPath = path.join(__dirname, "../assets/contrato.base64")
     if (!fs.existsSync(contractPath)) {
       return res.status(500).json({ success: false, message: "Archivo contrato.b64 no encontrado" })
     }
