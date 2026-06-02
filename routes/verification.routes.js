@@ -77,26 +77,7 @@ router.get("/verify/:sessionId", async (req, res) => {
     }
     h2 { color: #111827; margin-bottom: 8px; font-size: 1.4rem; }
     #status { color: #6b7280; font-size: 0.9rem; margin-bottom: 24px; }
-    #warning {
-      display: none;
-      background: #fef3c7;
-      border: 1px solid #f59e0b;
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      font-size: 0.85rem;
-      text-align: left;
-    }
-    #warning strong { display: block; margin-bottom: 6px; }
-    #warning .url-box {
-      background: #fff;
-      padding: 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      word-break: break-all;
-      margin-top: 8px;
-      border: 1px solid #e5e7eb;
-    }
+    
     eclipsoft-id4face { display: block; }
   </style>
 </head>
@@ -104,37 +85,11 @@ router.get("/verify/:sessionId", async (req, res) => {
   <div class="container">
     <h2>Validación Biométrica</h2>
     <p id="status">Inicializando...</p>
-    <div id="warning">
-      <strong>⚠️ Abre este link en tu navegador</strong>
-      Para completar la validación necesitas abrir este link en Chrome o Safari:
-      <div class="url-box" id="page-url"></div>
-    </div>
     <eclipsoft-id4face dismissable oval limits></eclipsoft-id4face>
   </div>
 
   <script>
     const WHATSAPP_RETURN_URL = "https://wa.me/${process.env.WHATSAPP_NUMBER}"
-    const currentUrl = window.location.href
-    const ua = navigator.userAgent
-    const isAndroid = /android/i.test(ua)
-    const isIOS = /iphone|ipad/i.test(ua)
-    const isWhatsApp = ua.includes("WhatsApp")
-
-    // ── Intentar forzar apertura en navegador nativo ──────────────────────
-    if (isWhatsApp) {
-      if (isAndroid) {
-        // Intent para abrir en Chrome — si falla cae al navegador por defecto
-        const intent = "intent://" + currentUrl.replace(/^https?:\\/\\//, "") +
-          "#Intent;scheme=https;package=com.android.chrome;action=android.intent.action.VIEW;end"
-        window.location.replace(intent)
-      } else if (isIOS) {
-        // En iOS WhatsApp no permite forzar navegador externo directamente
-        // Mostrar aviso con la URL para que el usuario la copie
-        document.getElementById("warning").style.display = "block"
-        document.getElementById("page-url").textContent = currentUrl
-        document.getElementById("status").textContent = "Abre el link en Safari para continuar."
-      }
-    }
 
     // ── Iniciar biometría ─────────────────────────────────────────────────
     window.addEventListener("load", async () => {
@@ -159,21 +114,19 @@ router.get("/verify/:sessionId", async (req, res) => {
       try {
         status.textContent = "Inicializando biometría..."
         await id4face.load(config)
+        status.textContent = "Por favor mire a la cámara"
 
-        // Solo registrar ready y timeout si load() fue exitoso
-        const readyTimeout = setTimeout(() => {
-          status.textContent = "Iniciando (modo fallback)..."
-          try { id4face.start() } catch (e) { console.error(e) }
-        }, 10000)
+        // Intentar start() directamente después del load
+        try {
+          await id4face.start()
+        } catch (e) {
+          console.warn("start() directo falló, esperando ready:", e)
+        }
 
+        // ready como respaldo por si start() no funcionó
         id4face.addEventListener("ready", () => {
-          clearTimeout(readyTimeout)
           status.textContent = "Por favor mire a la cámara"
-          try {
-            id4face.start()
-          } catch (error) {
-            status.textContent = "Error iniciando cámara: " + error.message
-          }
+          try { id4face.start() } catch (e) { console.error(e) }
         })
 
       } catch (error) {
