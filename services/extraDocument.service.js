@@ -1,8 +1,14 @@
-const axios = require("axios")
+const axios    = require("axios")
 const FormData = require("form-data")
+const { HttpsProxyAgent } = require("https-proxy-agent")
 const { generateToken } = require("./id4face.service")
 
 const EXTRA_DOCUMENT_PATH = "/api/extra-document"
+
+// ── Proxy para IP estática ───────────────
+const proxyAgent = process.env.PROXY_URL
+  ? new HttpsProxyAgent(process.env.PROXY_URL)
+  : undefined
 
 async function fetchExtraDocumentByCedula(cedula, options = {}) {
   if (!cedula) {
@@ -19,28 +25,27 @@ async function fetchExtraDocumentByCedula(cedula, options = {}) {
     throw new Error("EXTRA_DOCUMENT_BASE_URL no está configurada.")
   }
 
-  // 1. Declarar todo primero
   const token = await generateToken()
-  const form = new FormData()
-  const url = BASE_URL.replace(/\/+$/, "") + EXTRA_DOCUMENT_PATH
+  const form  = new FormData()
+  const url   = BASE_URL.replace(/\/+$/, "") + EXTRA_DOCUMENT_PATH
 
   form.append("id", cedula)
 
-  // 2. Luego los logs (ya con url y form disponibles)
   console.log("===== EXTRA DOCUMENT DEBUG =====")
   console.log("URL:", url)
   console.log("TOKEN generado:", token ? token.substring(0, 20) + "..." : "VACÍO")
 
   try {
     const response = await axios({
-      method: "get",
+      method:     "get",
       url,
       headers: {
         ...form.getHeaders(),
-        "Authorization": `Bearer ${token}`, 
+        "Authorization": `Bearer ${token}`,
         ...(options.headers || {})
       },
-      data: form,
+      httpsAgent:   proxyAgent,
+      data:         form,
       responseType: "arraybuffer"
     })
 

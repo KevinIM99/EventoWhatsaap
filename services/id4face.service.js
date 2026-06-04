@@ -1,4 +1,10 @@
 const axios = require("axios")
+const { HttpsProxyAgent } = require("https-proxy-agent")
+
+// ── Proxy para IP estática ───────────────
+const proxyAgent = process.env.PROXY_URL
+  ? new HttpsProxyAgent(process.env.PROXY_URL)
+  : undefined
 
 /**
  * Genera un token de sesión autenticándose en el servicio ID4FACE.
@@ -17,7 +23,8 @@ async function generateToken() {
         password: process.env.ID4FACE_PASS
       },
       {
-        headers: { "Content-Type": "application/json" }
+        headers:    { "Content-Type": "application/json" },
+        httpsAgent: proxyAgent
       }
     )
 
